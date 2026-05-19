@@ -3,4 +3,6 @@ project_name       = "video-streaming"
 environment        = "dev"
 github_repo_url    = "https://github.com/USER/video-streaming-platform.git"
 create_nat_gateway = true
-
+node_desired_size  = 3
+node_min_size      = 2
+node_max_size      = 3

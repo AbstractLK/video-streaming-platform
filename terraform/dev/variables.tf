@@ -28,6 +28,24 @@ variable "create_nat_gateway" {
   default     = true
 }
 
+variable "node_desired_size" {
+  type        = number
+  description = "Desired number of EKS worker nodes. Use 3 when running Argo CD, ingress, logging, and the full monitoring stack on t3.small."
+  default     = 2
+}
+
+variable "node_min_size" {
+  type        = number
+  description = "Minimum number of EKS worker nodes."
+  default     = 2
+}
+
+variable "node_max_size" {
+  type        = number
+  description = "Maximum number of EKS worker nodes."
+  default     = 3
+}
+
 variable "service_names" {
   type        = list(string)
   description = "Microservice names that need ECR repositories."
@@ -39,4 +57,3 @@ variable "service_names" {
     "streaming-service"
   ]
 }
-

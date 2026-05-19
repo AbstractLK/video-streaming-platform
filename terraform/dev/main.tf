@@ -171,9 +171,9 @@ resource "aws_eks_node_group" "main" {
   capacity_type   = "ON_DEMAND"
 
   scaling_config {
-    desired_size = 2
-    min_size     = 2
-    max_size     = 2
+    desired_size = var.node_desired_size
+    min_size     = var.node_min_size
+    max_size     = var.node_max_size
   }
 
   depends_on = [
@@ -501,4 +501,3 @@ resource "aws_iam_role_policy" "fluent_bit_irsa" {
     }]
   })
 }
-
