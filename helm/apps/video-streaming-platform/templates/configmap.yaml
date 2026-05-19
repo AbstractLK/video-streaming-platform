@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  labels:
+    {{- include "vsp.labels" . | nindent 4 }}
+data:
+  NODE_ENV: production
+  AWS_REGION: {{ .Values.config.awsRegion | quote }}
+  MEDIA_BUCKET: {{ .Values.config.mediaBucket | quote }}
+  MEDIA_BASE_URL: {{ .Values.config.mediaBaseUrl | quote }}
+  SQS_QUEUE_URL: {{ .Values.config.sqsQueueUrl | quote }}
+  VIDEO_SERVICE_URL: {{ .Values.config.videoServiceUrl | quote }}
+

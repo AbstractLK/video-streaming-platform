@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ingress-nginx-dev
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://kubernetes.github.io/ingress-nginx
+      chart: ingress-nginx
+      targetRevision: 4.11.2
+      helm:
+        valueFiles:
+          - $values/helm/platform/ingress-nginx-values.yaml
+    - repoURL: https://github.com/AbstractLK/video-streaming-platform.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ingress-nginx
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

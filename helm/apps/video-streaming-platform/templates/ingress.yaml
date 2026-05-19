@@ -1,0 +1,55 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: video-streaming-api
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  labels:
+    {{- include "vsp.labels" . | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - {{- if .Values.ingress.host }}
+      host: {{ .Values.ingress.host | quote }}
+      {{- end }}
+      http:
+        paths:
+          - path: /api/auth(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 3000
+          - path: /api/users(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 3000
+          - path: /api/videos(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: video-service
+                port:
+                  number: 3000
+          - path: /api/uploads(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: upload-processing-service
+                port:
+                  number: 3000
+          - path: /api/stream(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: streaming-service
+                port:
+                  number: 3000
+{{- end }}
+

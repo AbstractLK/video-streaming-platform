@@ -1,0 +1,6 @@
+aws_region         = "ap-southeast-1"
+project_name       = "video-streaming"
+environment        = "dev"
+github_repo_url    = "https://github.com/USER/video-streaming-platform.git"
+create_nat_gateway = true
+

@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: logging-dev
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://aws.github.io/eks-charts
+      chart: aws-for-fluent-bit
+      targetRevision: 0.1.34
+      helm:
+        valueFiles:
+          - $values/helm/platform/fluent-bit-values.yaml
+    - repoURL: https://github.com/AbstractLK/video-streaming-platform.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: logging
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+

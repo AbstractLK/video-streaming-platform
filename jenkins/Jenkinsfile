@@ -1,0 +1,93 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION = credentials('aws-region')
+    AWS_ACCOUNT_ID = credentials('aws-account-id')
+    ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    FRONTEND_BUCKET = credentials('frontend-bucket')
+    CLOUDFRONT_DISTRIBUTION_ID = credentials('frontend-cloudfront-distribution-id')
+    IMAGE_TAG = "${env.BUILD_NUMBER}-${env.GIT_COMMIT.take(7)}"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Backend Checks') {
+      steps {
+        script {
+          def services = ['auth-service', 'user-service', 'video-service', 'upload-processing-service', 'streaming-service']
+          services.each { svc ->
+            dir("services/${svc}") {
+              sh 'npm install'
+              sh 'npm run check'
+            }
+          }
+        }
+      }
+    }
+
+    stage('Build Images') {
+      steps {
+        script {
+          def services = ['auth-service', 'user-service', 'video-service', 'upload-processing-service', 'streaming-service']
+          services.each { svc ->
+            sh "docker build -t ${ECR_REGISTRY}/${svc}:${IMAGE_TAG} services/${svc}"
+          }
+        }
+      }
+    }
+
+    stage('Scan Images') {
+      steps {
+        script {
+          def services = ['auth-service', 'user-service', 'video-service', 'upload-processing-service', 'streaming-service']
+          services.each { svc ->
+            sh "trivy image --severity HIGH,CRITICAL --exit-code 0 ${ECR_REGISTRY}/${svc}:${IMAGE_TAG}"
+          }
+        }
+      }
+    }
+
+    stage('Push Images') {
+      steps {
+        sh 'aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}'
+        script {
+          def services = ['auth-service', 'user-service', 'video-service', 'upload-processing-service', 'streaming-service']
+          services.each { svc ->
+            sh "docker push ${ECR_REGISTRY}/${svc}:${IMAGE_TAG}"
+          }
+        }
+      }
+    }
+
+    stage('Update Helm Values') {
+      steps {
+        sh '''
+          sed -i "s/tag: .*/tag: ${IMAGE_TAG}/g" helm/apps/video-streaming-platform/values-dev.yaml
+          git config user.email "jenkins@example.local"
+          git config user.name "jenkins"
+          git add helm/apps/video-streaming-platform/values-dev.yaml
+          git commit -m "chore: deploy images ${IMAGE_TAG}" || true
+          git push origin HEAD:${BRANCH_NAME}
+        '''
+      }
+    }
+
+    stage('Frontend Deploy') {
+      steps {
+        dir('frontend') {
+          sh 'npm install'
+          sh 'npm run build'
+        }
+        sh 'aws s3 sync frontend/dist s3://${FRONTEND_BUCKET}/ --delete'
+        sh 'aws cloudfront create-invalidation --distribution-id ${CLOUDFRONT_DISTRIBUTION_ID} --paths "/*"'
+      }
+    }
+  }
+}
+

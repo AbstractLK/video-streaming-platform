@@ -1,0 +1,46 @@
+prometheus:
+  prometheusSpec:
+    retention: 3d
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    resources:
+      requests:
+        cpu: 150m
+        memory: 384Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+
+grafana:
+  adminPassword: change-me-dev-grafana
+  resources:
+    requests:
+      cpu: 75m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 96Mi
+      limits:
+        cpu: 150m
+        memory: 192Mi
+
+kubeStateMetrics:
+  enabled: true
+
+nodeExporter:
+  enabled: true
+
+defaultRules:
+  create: true
+  rules:
+    etcd: false
+    kubeSchedulerAlerting: false
+    kubeControllerManager: false

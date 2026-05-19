@@ -1,0 +1,34 @@
+{{- if .Values.worker.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: upload-processing-worker
+  labels:
+    app.kubernetes.io/name: upload-processing-worker
+    {{- include "vsp.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: upload-processing-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: upload-processing-worker
+        {{- include "vsp.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ .Values.worker.serviceAccountName }}
+      containers:
+        - name: worker
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.worker.repository }}:{{ .Values.global.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          command: ["npm", "run", "worker"]
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+{{- end }}
+

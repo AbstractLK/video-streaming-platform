@@ -73,7 +73,7 @@ terraform apply
 
 Terraform creates AWS infrastructure only. Kubernetes workloads are deployed through Helm and Argo CD.
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full deployment sequence.
+See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full deployment sequence.
 
 ## Argo CD Flow
 
@@ -90,4 +90,3 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full deployment sequence.
 - App replicas: 1
 - Kubernetes Secrets are used for app secrets only.
 - IRSA is used for pod access to AWS resources.
-- No RDS, AWS Secrets Manager, Loki, Kafka, payments, recommendations, or subtitles prefix.

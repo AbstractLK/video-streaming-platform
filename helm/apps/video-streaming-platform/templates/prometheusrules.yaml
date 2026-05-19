@@ -1,0 +1,55 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: video-streaming-alerts
+  labels:
+    {{- include "vsp.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: video-streaming.rules
+      rules:
+        - alert: VideoStreamingServiceDown
+          expr: up{job=~".*auth-service.*|.*user-service.*|.*video-service.*|.*upload-processing-service.*|.*streaming-service.*"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "A video streaming API service is down"
+            description: "Prometheus target {{ "{{" }} $labels.job {{ "}}" }} has been down for more than 2 minutes."
+
+        - alert: VideoStreamingPodCrashLooping
+          expr: increase(kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}"}[10m]) > 3
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod is restarting repeatedly"
+            description: "Pod {{ "{{" }} $labels.pod {{ "}}" }} has restarted more than 3 times in 10 minutes."
+
+        - alert: VideoStreamingDeploymentUnavailable
+          expr: kube_deployment_status_replicas_available{namespace="{{ .Release.Namespace }}"} < kube_deployment_spec_replicas{namespace="{{ .Release.Namespace }}"}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Deployment has unavailable replicas"
+            description: "Deployment {{ "{{" }} $labels.deployment {{ "}}" }} does not have all desired replicas available."
+
+        - alert: VideoStreamingHighPodMemory
+          expr: sum by (pod) (container_memory_working_set_bytes{namespace="{{ .Release.Namespace }}", container!="", image!=""}) > 400 * 1024 * 1024
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod memory usage is high"
+            description: "Pod {{ "{{" }} $labels.pod {{ "}}" }} is using more than 400Mi memory."
+
+        - alert: VideoStreamingPostgresDown
+          expr: kube_statefulset_status_replicas_ready{namespace="{{ .Release.Namespace }}", statefulset="postgres"} < 1
+          for: 3m
+          labels:
+            severity: critical
+          annotations:
+            summary: "PostgreSQL StatefulSet is not ready"
+            description: "The PostgreSQL StatefulSet has no ready replicas."
+

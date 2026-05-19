@@ -1,0 +1,21 @@
+cloudWatchLogs:
+  enabled: true
+  region: ap-southeast-1
+  logGroupName: /eks/video-streaming/dev
+  logStreamPrefix: from-fluent-bit-
+  autoCreateGroup: true
+
+serviceAccount:
+  create: true
+  name: fluent-bit-sa
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::860977520998:role/video-streaming-dev-fluent-bit-irsa
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 96Mi
+  limits:
+    cpu: 150m
+    memory: 192Mi
+

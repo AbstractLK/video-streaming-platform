@@ -1,0 +1,85 @@
+environment: dev
+
+global:
+  imageRegistry: "860977520998.dkr.ecr.ap-southeast-1.amazonaws.com"
+  imagePullPolicy: IfNotPresent
+  image:
+    tag: dev
+
+config:
+  awsRegion: ap-southeast-1
+  mediaBucket: video-streaming-media-dev
+  mediaBaseUrl: https://d3joxy9m2tzziw.cloudfront.net
+  sqsQueueUrl: https://sqs.ap-southeast-1.amazonaws.com/860977520998/video-streaming-dev-processing-queue
+  videoServiceUrl: http://video-service:3000
+
+secrets:
+  jwtSecret: this-is-dev-jwt-secret
+  postgresUser: app_user
+  postgresPassword: Abc@1234
+  postgresDatabase: video_streaming
+
+irsa:
+  uploadProcessingRoleArn: arn:aws:iam::860977520998:role/video-streaming-dev-upload-processing-irsa
+  streamingRoleArn: arn:aws:iam::860977520998:role/video-streaming-dev-streaming-irsa
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ""
+
+services:
+  auth-service:
+    repository: auth-service
+    port: 3000
+    serviceAccountName: default
+    resources:
+      requests: { cpu: 50m, memory: 96Mi }
+      limits: { cpu: 200m, memory: 192Mi }
+  user-service:
+    repository: user-service
+    port: 3000
+    serviceAccountName: default
+    resources:
+      requests: { cpu: 50m, memory: 96Mi }
+      limits: { cpu: 200m, memory: 192Mi }
+  video-service:
+    repository: video-service
+    port: 3000
+    serviceAccountName: default
+    resources:
+      requests: { cpu: 50m, memory: 96Mi }
+      limits: { cpu: 250m, memory: 256Mi }
+  upload-processing-service:
+    repository: upload-processing-service
+    port: 3000
+    serviceAccountName: upload-processing-sa
+    resources:
+      requests: { cpu: 75m, memory: 128Mi }
+      limits: { cpu: 300m, memory: 256Mi }
+  streaming-service:
+    repository: streaming-service
+    port: 3000
+    serviceAccountName: streaming-sa
+    resources:
+      requests: { cpu: 50m, memory: 96Mi }
+      limits: { cpu: 200m, memory: 192Mi }
+
+worker:
+  enabled: true
+  repository: upload-processing-service
+  serviceAccountName: upload-processing-sa
+  resources:
+    requests: { cpu: 100m, memory: 192Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+
+postgres:
+  image: postgres:16-alpine
+  storage: 5Gi
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+
+serviceMonitor:
+  enabled: true
+

@@ -1,0 +1,18 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: video-streaming-services
+  labels:
+    release: monitoring
+    {{- include "vsp.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: video-streaming-platform
+      app.kubernetes.io/component: api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+{{- end }}
