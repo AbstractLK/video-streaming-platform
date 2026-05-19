@@ -1,3 +1,8 @@
+prometheusOperator:
+  admissionWebhooks:
+    patch:
+      enabled: false
+
 prometheus:
   prometheusSpec:
     retention: 3d
