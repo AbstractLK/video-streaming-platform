@@ -1,4 +1,9 @@
 prometheusOperator:
+  replicas: 1
+  strategy:
+    type: Recreate
+  serviceMonitor:
+    selfMonitor: false
   admissionWebhooks:
     enabled: false
     patch:
