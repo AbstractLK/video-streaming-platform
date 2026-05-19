@@ -1,5 +1,7 @@
 prometheusOperator:
   replicas: 1
+  tls:
+    enabled: false
   strategy:
     type: RollingUpdate
     rollingUpdate:
