@@ -3,7 +3,7 @@ controller:
   metrics:
     enabled: true
     serviceMonitor:
-      enabled: true
+      enabled: false
   resources:
     requests:
       cpu: 100m
