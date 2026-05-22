@@ -55,7 +55,13 @@ pipeline {
 
     stage('Push Images') {
       steps {
-        sh 'aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}'
+        withCredentials([usernamePassword(
+          credentialsId: 'aws-jenkins-creds',
+          usernameVariable: 'AWS_ACCESS_KEY_ID',
+          passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+        )]) {
+          sh 'aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}'
+        }
         script {
           def services = ['auth-service', 'user-service', 'video-service', 'upload-processing-service', 'streaming-service']
           services.each { svc ->
@@ -84,8 +90,20 @@ pipeline {
           sh 'npm install'
           sh 'npm run build'
         }
-        sh 'aws s3 sync frontend/dist s3://${FRONTEND_BUCKET}/ --delete'
-        sh 'aws cloudfront create-invalidation --distribution-id ${CLOUDFRONT_DISTRIBUTION_ID} --paths "/*"'
+        withCredentials([usernamePassword(
+          credentialsId: 'aws-jenkins-creds',
+          usernameVariable: 'AWS_ACCESS_KEY_ID',
+          passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+        )]) {
+          sh 'aws s3 sync frontend/dist s3://${FRONTEND_BUCKET}/ --delete'
+        }
+        withCredentials([usernamePassword(
+          credentialsId: 'aws-jenkins-creds',
+          usernameVariable: 'AWS_ACCESS_KEY_ID',
+          passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+        )]) {
+          sh 'aws cloudfront create-invalidation --distribution-id ${CLOUDFRONT_DISTRIBUTION_ID} --paths "/*"'
+        }
       }
     }
   }
