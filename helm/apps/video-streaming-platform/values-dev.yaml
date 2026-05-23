@@ -4,7 +4,7 @@ global:
   imageRegistry: "860977520998.dkr.ecr.ap-southeast-1.amazonaws.com"
   imagePullPolicy: IfNotPresent
   image:
-    tag: 14-be61907
+    tag: 15-43f859b
 
 config:
   awsRegion: ap-southeast-1
