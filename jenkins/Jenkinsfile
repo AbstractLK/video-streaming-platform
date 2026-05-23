@@ -8,6 +8,7 @@ pipeline {
     FRONTEND_BUCKET = credentials('frontend-bucket')
     CLOUDFRONT_DISTRIBUTION_ID = credentials('frontend-cloudfront-distribution-id')
     IMAGE_TAG = "${env.BUILD_NUMBER}-${env.GIT_COMMIT.take(7)}"
+    DEPLOY_BRANCH = 'main'
   }
 
   stages {
@@ -78,8 +79,8 @@ pipeline {
           git config user.email "jenkins@example.local"
           git config user.name "jenkins"
           git add helm/apps/video-streaming-platform/values-dev.yaml
-          git commit -m "chore: deploy images ${IMAGE_TAG}" || true
-          git push origin HEAD:${BRANCH_NAME}
+          git commit -m "chore: deploy images ${IMAGE_TAG}"
+          git push origin HEAD:${DEPLOY_BRANCH}
         '''
       }
     }
