@@ -74,14 +74,22 @@ pipeline {
 
     stage('Update Helm Values') {
       steps {
-        sh '''
+        withCredentials([usernamePassword(
+            credentialsId: 'github-pat',
+            usernameVariable: 'GIT_USERNAME',
+            passwordVariable: 'GIT_TOKEN'
+        )]) {
+          sh '''
           sed -i "s/tag: .*/tag: ${IMAGE_TAG}/g" helm/apps/video-streaming-platform/values-dev.yaml
           git config user.email "jenkins@example.local"
+          git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/AbstractLK/video-streaming-platform.git
           git config user.name "jenkins"
           git add helm/apps/video-streaming-platform/values-dev.yaml
           git commit -m "chore: deploy images ${IMAGE_TAG}"
           git push origin HEAD:${DEPLOY_BRANCH}
-        '''
+          '''
+        }
+        
       }
     }
 
@@ -97,12 +105,6 @@ pipeline {
           passwordVariable: 'AWS_SECRET_ACCESS_KEY'
         )]) {
           sh 'aws s3 sync frontend/dist s3://${FRONTEND_BUCKET}/ --delete'
-        }
-        withCredentials([usernamePassword(
-          credentialsId: 'aws-jenkins-creds',
-          usernameVariable: 'AWS_ACCESS_KEY_ID',
-          passwordVariable: 'AWS_SECRET_ACCESS_KEY'
-        )]) {
           sh 'aws cloudfront create-invalidation --distribution-id ${CLOUDFRONT_DISTRIBUTION_ID} --paths "/*"'
         }
       }
