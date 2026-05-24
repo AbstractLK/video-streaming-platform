@@ -18,7 +18,33 @@ pipeline {
       }
     }
 
+    stage('Decide Build') {
+      steps {
+        script {
+          def lastMessage = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
+          def changedFiles = sh(script: 'git diff --name-only HEAD~1 HEAD || true', returnStdout: true).trim()
+
+          def isJenkinsDeployCommit = lastMessage.startsWith('chore: deploy images')
+          def hasSourceChanges = changedFiles
+            .split('\\n')
+            .any { it.startsWith('services/') || it.startsWith('frontend/') || it.startsWith('jenkins/') }
+
+          if (isJenkinsDeployCommit || !hasSourceChanges) {
+            env.SKIP_PIPELINE = 'true'
+            currentBuild.description = isJenkinsDeployCommit
+              ? 'Skipped Jenkins deploy-tag commit'
+              : 'Skipped non-source change'
+          } else {
+            env.SKIP_PIPELINE = 'false'
+          }
+        }
+      }
+    }
+
     stage('Backend Checks') {
+      when {
+        expression { env.SKIP_PIPELINE != 'true' }
+      }
       steps {
         script {
           def services = ['auth-service', 'user-service', 'video-service', 'upload-processing-service', 'streaming-service']
@@ -33,6 +59,9 @@ pipeline {
     }
 
     stage('Build Images') {
+      when {
+        expression { env.SKIP_PIPELINE != 'true' }
+      }
       steps {
         script {
           def services = ['auth-service', 'user-service', 'video-service', 'upload-processing-service', 'streaming-service']
@@ -44,6 +73,9 @@ pipeline {
     }
 
     stage('Scan Images') {
+      when {
+        expression { env.SKIP_PIPELINE != 'true' }
+      }
       steps {
         script {
           def services = ['auth-service', 'user-service', 'video-service', 'upload-processing-service', 'streaming-service']
@@ -55,6 +87,9 @@ pipeline {
     }
 
     stage('Push Images') {
+      when {
+        expression { env.SKIP_PIPELINE != 'true' }
+      }
       steps {
         withCredentials([usernamePassword(
           credentialsId: 'aws-jenkins-creds',
@@ -73,6 +108,9 @@ pipeline {
     }
 
     stage('Update Helm Values') {
+      when {
+        expression { env.SKIP_PIPELINE != 'true' }
+      }
       steps {
         withCredentials([usernamePassword(
             credentialsId: 'github-pat',
@@ -85,7 +123,7 @@ pipeline {
           git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/AbstractLK/video-streaming-platform.git
           git config user.name "jenkins"
           git add helm/apps/video-streaming-platform/values-dev.yaml
-          git diff --cached --quiet helm/apps/video-streaming-platform/values-dev.yaml || git commit -m "chore: deploy images ${IMAGE_TAG}"
+          git diff --cached --quiet helm/apps/video-streaming-platform/values-dev.yaml || git commit -m "chore: deploy images ${IMAGE_TAG} [skip ci]"
           git push origin HEAD:${DEPLOY_BRANCH}
           '''
         }
@@ -94,6 +132,9 @@ pipeline {
     }
 
     stage('Frontend Deploy') {
+      when {
+        expression { env.SKIP_PIPELINE != 'true' }
+      }
       steps {
         dir('frontend') {
           sh 'npm install'
@@ -111,4 +152,3 @@ pipeline {
     }
   }
 }
-
