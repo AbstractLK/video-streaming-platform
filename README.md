@@ -1,6 +1,6 @@
 # Video Streaming Platform
 
-DevOps-focused, portfolio-realistic Netflix-like platform using AWS, EKS, Helm, Argo CD, Jenkins, Terraform, SQS, S3, CloudFront, CloudWatch Logs, Prometheus, Grafana, and Alertmanager.
+DevOps-focused, portfolio-realistic Netflix-like Video Streaming Platform using AWS, EKS, Helm, Argo CD, Jenkins, Terraform, SQS, S3, CloudFront, CloudWatch Logs, Prometheus, Grafana, and Alertmanager.
 
 ## Architecture
 
