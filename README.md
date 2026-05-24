@@ -75,6 +75,66 @@ Terraform creates AWS infrastructure only. Kubernetes workloads are deployed thr
 
 See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full deployment sequence.
 
+## Deletion Order
+
+Delete Kubernetes-managed resources before running `terraform destroy`. This lets Kubernetes clean up AWS resources that were created outside Terraform, especially the NGINX Ingress `LoadBalancer`.
+
+```powershell
+aws eks update-kubeconfig --region ap-southeast-1 --name video-streaming-dev-eks
+```
+
+1. Delete the application workloads:
+
+```powershell
+kubectl delete application video-streaming-platform-dev -n argocd
+kubectl delete namespace dev
+```
+
+2. Delete ingress next, because it owns the AWS public LoadBalancer:
+
+```powershell
+kubectl delete application ingress-nginx-dev -n argocd
+kubectl delete namespace ingress-nginx
+```
+
+3. Wait until no `LoadBalancer` services remain:
+
+```powershell
+kubectl get svc -A
+aws elbv2 describe-load-balancers --region ap-southeast-1
+aws elb describe-load-balancers --region ap-southeast-1
+```
+
+4. Delete monitoring and logging:
+
+```powershell
+kubectl delete application monitoring-dev logging-dev -n argocd
+kubectl delete namespace monitoring logging
+```
+
+5. Delete Argo CD last:
+
+```powershell
+kubectl delete -f argocd-apps/
+helm uninstall argocd -n argocd
+kubectl delete namespace argocd
+```
+
+6. Destroy the Terraform-managed AWS infrastructure:
+
+```powershell
+cd terraform/dev
+terraform destroy
+```
+
+If the EKS cluster has already been deleted and `terraform destroy` fails with VPC, subnet, or internet gateway dependency errors, remove orphan AWS dependencies manually and then rerun `terraform destroy`:
+
+```powershell
+aws elbv2 describe-load-balancers --region ap-southeast-1 --query "LoadBalancers[?VpcId=='vpc-044c5d6ba1ff3b65d']"
+aws elb describe-load-balancers --region ap-southeast-1
+aws ec2 describe-network-interfaces --region ap-southeast-1 --filters Name=vpc-id,Values=vpc-044c5d6ba1ff3b65d
+```
+
 ## Argo CD Flow
 
 1. Bootstrap Argo CD into the `argocd` namespace.
