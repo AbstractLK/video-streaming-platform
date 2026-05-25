@@ -64,8 +64,8 @@ spec:
     - metadata:
         name: postgres-data
       spec:
+        storageClassName: {{ .Values.postgres.storageClassName | quote }}
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
             storage: {{ .Values.postgres.storage }}
-
