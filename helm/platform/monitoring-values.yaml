@@ -16,7 +16,7 @@ prometheusOperator:
 
 prometheus:
   prometheusSpec:
-    retention: 3d
+    retention: 1d
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
@@ -39,6 +39,7 @@ grafana:
       memory: 256Mi
 
 alertmanager:
+  enabled: false
   alertmanagerSpec:
     resources:
       requests:
