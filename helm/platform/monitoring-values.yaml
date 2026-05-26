@@ -29,7 +29,7 @@ prometheus:
         memory: 768Mi
 
 grafana:
-  adminPassword: admin
+  adminPassword: admin123
   resources:
     requests:
       cpu: 75m
