@@ -8,7 +8,7 @@ global:
 
 config:
   awsRegion: ap-southeast-1
-  mediaBucket: video-streaming-media-dev
+  mediaBucket: video-streaming-dev-media-860977520998
   mediaBaseUrl: https://dpjvdtv05i7jm.cloudfront.net
   sqsQueueUrl: https://sqs.ap-southeast-1.amazonaws.com/860977520998/video-streaming-dev-processing-queue
   videoServiceUrl: http://video-service:3000

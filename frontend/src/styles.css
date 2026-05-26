@@ -49,9 +49,14 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .grid {
   display: grid;
-  grid-template-columns: minmax(280px, 420px) minmax(360px, 1fr);
+  grid-template-columns: minmax(260px, 360px) minmax(260px, 360px) minmax(360px, 1fr);
   gap: 24px;
 }
 
@@ -60,6 +65,23 @@ button {
   border-radius: 8px;
   padding: 20px;
   background: #171b23;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.panel-heading h2 {
+  margin-bottom: 0;
+}
+
+.message {
+  margin-bottom: 20px;
+  color: #bfdbfe;
 }
 
 .videos {
@@ -85,8 +107,40 @@ button {
   border-radius: 4px;
 }
 
+.thumbnail-placeholder {
+  grid-row: 1 / span 2;
+  width: 96px;
+  height: 56px;
+  border-radius: 4px;
+  background: #0f172a;
+}
+
 .video-card small {
   color: #bac7d5;
+}
+
+.upload form {
+  display: grid;
+  gap: 12px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: #bac7d5;
+  font-size: 14px;
+}
+
+input,
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #ecf2ff;
+  padding: 10px 12px;
+  font: inherit;
 }
 
 video {
@@ -107,4 +161,3 @@ video {
     display: grid;
   }
 }
-

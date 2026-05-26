@@ -22,6 +22,11 @@ variable "github_repo_url" {
   default     = "GITHUB_REPO_URL"
 }
 
+variable "frontend_api_origin_domain_name" {
+  type        = string
+  description = "DNS name of the NGINX ingress load balancer used by frontend CloudFront for /api/* requests."
+}
+
 variable "create_nat_gateway" {
   type        = bool
   description = "Create a NAT gateway for private EKS worker subnets."

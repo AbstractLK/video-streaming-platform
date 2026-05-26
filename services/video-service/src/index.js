@@ -7,7 +7,6 @@ import client from 'prom-client';
 const app = express();
 const port = process.env.PORT || 3000;
 const databaseUrl = process.env.DATABASE_URL;
-const mediaBaseUrl = process.env.MEDIA_BASE_URL || 'https://example.cloudfront.net';
 const pool = databaseUrl ? new pg.Pool({ connectionString: databaseUrl }) : null;
 
 client.collectDefaultMetrics();
@@ -16,18 +15,6 @@ const httpRequests = new client.Counter({
   help: 'Video service HTTP requests',
   labelNames: ['method', 'route', 'status']
 });
-
-const demoVideos = [
-  {
-    id: 'demo-video',
-    title: 'Demo Stream',
-    description: 'Small sample HLS stream for the DevOps demo.',
-    genre: 'Documentary',
-    thumbnailUrl: `${mediaBaseUrl}/thumbnails/demo-video/thumbnail.jpg`,
-    hlsManifestKey: 'processed/hls/demo-video/master.m3u8',
-    status: 'ready'
-  }
-];
 
 app.use(cors());
 app.use(express.json());
@@ -54,14 +41,14 @@ async function ensureSchema() {
 }
 
 async function listVideos() {
-  if (!pool) return demoVideos;
+  if (!pool) return [];
   const result = await pool.query(`
     select id, title, description, genre, thumbnail_url as "thumbnailUrl",
       hls_manifest_key as "hlsManifestKey", status
     from videos
     order by created_at desc
   `);
-  return result.rows.length ? result.rows : demoVideos;
+  return result.rows;
 }
 
 app.get('/health', (_, res) => res.json({ status: 'ok', service: 'video-service' }));

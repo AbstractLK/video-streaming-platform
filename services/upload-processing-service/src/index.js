@@ -8,7 +8,7 @@ import client from 'prom-client';
 const app = express();
 const port = process.env.PORT || 3000;
 const region = process.env.AWS_REGION || 'ap-southeast-1';
-const mediaBucket = process.env.MEDIA_BUCKET || 'video-streaming-media-dev';
+const mediaBucket = process.env.MEDIA_BUCKET || 'video-streaming-dev-media-860977520998';
 const queueUrl = process.env.SQS_QUEUE_URL || '';
 const s3 = new S3Client({ region });
 const sqs = new SQSClient({ region });
@@ -57,4 +57,3 @@ app.post('/complete', async (req, res) => {
 });
 
 app.listen(port, () => console.log(`upload-processing-service listening on ${port}`));
-
