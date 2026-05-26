@@ -55,6 +55,8 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: POSTGRES_DB
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
@@ -64,7 +66,9 @@ spec:
     - metadata:
         name: postgres-data
       spec:
-        storageClassName: {{ .Values.postgres.storageClassName | quote }}
+        {{- with .Values.postgres.storageClassName }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:

@@ -75,7 +75,7 @@ worker:
 
 postgres:
   image: postgres:16-alpine
-  storageClassName: gp3
+  storageClassName: ""
   storage: 5Gi
   resources:
     requests: { cpu: 100m, memory: 256Mi }
@@ -89,4 +89,3 @@ storageClass:
 
 serviceMonitor:
   enabled: true
-

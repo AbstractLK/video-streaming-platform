@@ -162,11 +162,6 @@ resource "aws_iam_role_policy_attachment" "node_ecr" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-resource "aws_iam_role_policy_attachment" "node_ebs_csi" {
-  role       = aws_iam_role.node_group.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-}
-
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
   node_group_name = "${local.name}-nodes"
@@ -184,8 +179,7 @@ resource "aws_eks_node_group" "main" {
   depends_on = [
     aws_iam_role_policy_attachment.node_worker,
     aws_iam_role_policy_attachment.node_cni,
-    aws_iam_role_policy_attachment.node_ecr,
-    aws_iam_role_policy_attachment.node_ebs_csi
+    aws_iam_role_policy_attachment.node_ecr
   ]
   tags = local.tags
 }
@@ -195,9 +189,13 @@ resource "aws_eks_addon" "ebs_csi" {
   addon_name                  = "aws-ebs-csi-driver"
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"
+  service_account_role_arn    = aws_iam_role.ebs_csi_irsa.arn
   tags                        = local.tags
 
-  depends_on = [aws_eks_node_group.main]
+  depends_on = [
+    aws_eks_node_group.main,
+    aws_iam_role_policy_attachment.ebs_csi_irsa
+  ]
 }
 
 resource "aws_ecr_repository" "services" {
@@ -445,6 +443,26 @@ data "aws_iam_policy_document" "irsa_assume_fluent_bit" {
   }
 }
 
+data "aws_iam_policy_document" "irsa_assume_ebs_csi" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.eks.arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_provider_host}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_provider_host}:sub"
+      values   = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
+    }
+  }
+}
+
 resource "aws_iam_role" "upload_processing_irsa" {
   name               = "${local.name}-upload-processing-irsa"
   assume_role_policy = data.aws_iam_policy_document.irsa_assume_upload_processing.json
@@ -516,4 +534,15 @@ resource "aws_iam_role_policy" "fluent_bit_irsa" {
       Resource = "*"
     }]
   })
+}
+
+resource "aws_iam_role" "ebs_csi_irsa" {
+  name               = "${local.name}-ebs-csi-irsa"
+  assume_role_policy = data.aws_iam_policy_document.irsa_assume_ebs_csi.json
+  tags               = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "ebs_csi_irsa" {
+  role       = aws_iam_role.ebs_csi_irsa.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
 }
