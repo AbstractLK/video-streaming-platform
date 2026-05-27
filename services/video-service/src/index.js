@@ -1,13 +1,21 @@
+import { DeleteObjectsCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import { randomUUID } from 'crypto';
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import pg from 'pg';
 import client from 'prom-client';
 
 const app = express();
 const port = process.env.PORT || 3000;
+const jwtSecret = process.env.JWT_SECRET;
 const databaseUrl = process.env.DATABASE_URL;
 const pool = databaseUrl ? new pg.Pool({ connectionString: databaseUrl }) : null;
+
+const region = process.env.AWS_REGION || 'ap-southeast-1';
+const mediaBucket = process.env.MEDIA_BUCKET || 'video-streaming-dev-media-860977520998';
+const s3 = new S3Client({ region });
 
 client.collectDefaultMetrics();
 const httpRequests = new client.Counter({
@@ -16,12 +24,26 @@ const httpRequests = new client.Counter({
   labelNames: ['method', 'route', 'status']
 });
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 app.use((req, res, next) => {
   res.on('finish', () => httpRequests.inc({ method: req.method, route: req.path, status: res.statusCode }));
   next();
 });
+
+function requireAdmin(req, res, next) {
+  const token = req.cookies?.token || req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'missing token' });
+  try {
+    const user = jwt.verify(token, jwtSecret);
+    if (user.role !== 'admin') return res.status(403).json({ error: 'admin access required' });
+    req.user = user;
+    next();
+  } catch {
+    res.status(401).json({ error: 'invalid token' });
+  }
+}
 
 async function ensureSchema() {
   if (!pool) return;
@@ -51,6 +73,24 @@ async function listVideos() {
   return result.rows;
 }
 
+async function deleteS3Prefix(prefix) {
+  try {
+    const listResponse = await s3.send(new ListObjectsV2Command({
+      Bucket: mediaBucket,
+      Prefix: prefix
+    }));
+    const objects = listResponse.Contents;
+    if (!objects || objects.length === 0) return;
+    await s3.send(new DeleteObjectsCommand({
+      Bucket: mediaBucket,
+      Delete: { Objects: objects.map((obj) => ({ Key: obj.Key })) }
+    }));
+    console.log(`Deleted ${objects.length} S3 objects under ${prefix}`);
+  } catch (error) {
+    console.error(`Failed to delete S3 objects under ${prefix}:`, error.message);
+  }
+}
+
 app.get('/health', (_, res) => res.json({ status: 'ok', service: 'video-service' }));
 app.get('/metrics', async (_, res) => {
   res.set('Content-Type', client.register.contentType);
@@ -78,7 +118,7 @@ app.get('/:id', async (req, res) => {
   res.json(video);
 });
 
-app.post('/', async (req, res) => {
+app.post('/', requireAdmin, async (req, res) => {
   const { title, description = '', genre = 'General', thumbnailUrl, rawS3Key } = req.body;
   if (!title) return res.status(400).json({ error: 'title is required' });
   if (!pool) return res.status(201).json({ id: randomUUID(), title, description, genre, thumbnailUrl, rawS3Key, status: 'uploaded' });
@@ -89,6 +129,28 @@ app.post('/', async (req, res) => {
     [title, description, genre, thumbnailUrl, rawS3Key]
   );
   res.status(201).json(result.rows[0]);
+});
+
+app.delete('/:id', requireAdmin, async (req, res) => {
+  const videoId = req.params.id;
+
+  if (!pool) return res.status(204).end();
+
+  // Get the video to find S3 keys before deleting
+  const result = await pool.query('select id, raw_s3_key as "rawS3Key" from videos where id = $1', [videoId]);
+  if (!result.rows[0]) return res.status(404).json({ error: 'video not found' });
+
+  // Delete S3 objects: raw video, processed HLS, and thumbnails
+  await Promise.all([
+    deleteS3Prefix(`raw/videos/${videoId}/`),
+    deleteS3Prefix(`processed/hls/${videoId}/`),
+    deleteS3Prefix(`thumbnails/${videoId}/`)
+  ]);
+
+  // Delete the database row
+  await pool.query('delete from videos where id = $1', [videoId]);
+
+  res.status(204).end();
 });
 
 app.patch('/:id/status', async (req, res) => {

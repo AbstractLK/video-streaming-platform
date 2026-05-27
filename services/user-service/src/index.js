@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import jwt from 'jsonwebtoken';
@@ -6,7 +7,7 @@ import client from 'prom-client';
 
 const app = express();
 const port = process.env.PORT || 3000;
-const jwtSecret = process.env.JWT_SECRET || 'dev-only-secret';
+const jwtSecret = process.env.JWT_SECRET;
 const pool = process.env.DATABASE_URL ? new pg.Pool({ connectionString: process.env.DATABASE_URL }) : null;
 
 client.collectDefaultMetrics();
@@ -16,15 +17,16 @@ const httpRequests = new client.Counter({
   labelNames: ['method', 'route', 'status']
 });
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 app.use((req, res, next) => {
   res.on('finish', () => httpRequests.inc({ method: req.method, route: req.path, status: res.statusCode }));
   next();
 });
 
 function requireUser(req, res, next) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
+  const token = req.cookies?.token || req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'missing token' });
   try {
     req.user = jwt.verify(token, jwtSecret);
@@ -83,6 +85,15 @@ app.delete('/favorites/:videoId', requireUser, async (req, res) => {
   res.status(204).end();
 });
 
+app.get('/watch-history', requireUser, async (req, res) => {
+  if (!pool) return res.json([]);
+  const result = await pool.query(
+    'select video_id as "videoId", progress_seconds as "progressSeconds", updated_at as "updatedAt" from watch_history where user_id = $1 order by updated_at desc',
+    [req.user.sub]
+  );
+  res.json(result.rows);
+});
+
 app.post('/watch-history', requireUser, async (req, res) => {
   const { videoId, progressSeconds = 0 } = req.body;
   if (pool) {
@@ -101,4 +112,3 @@ ensureSchema()
     console.error('user-service failed to start', error);
     process.exit(1);
   });
-
