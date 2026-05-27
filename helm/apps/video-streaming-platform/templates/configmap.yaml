@@ -11,4 +11,5 @@ data:
   MEDIA_BASE_URL: {{ .Values.config.mediaBaseUrl | quote }}
   SQS_QUEUE_URL: {{ .Values.config.sqsQueueUrl | quote }}
   VIDEO_SERVICE_URL: {{ .Values.config.videoServiceUrl | quote }}
+  COOKIE_SECURE: {{ .Values.config.cookieSecure | quote }}
 

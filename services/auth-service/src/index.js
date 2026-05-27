@@ -62,7 +62,7 @@ async function seedAdmin() {
 function setTokenCookie(res, token) {
   res.cookie('token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.COOKIE_SECURE === 'true',
     sameSite: 'strict',
     path: '/',
     maxAge: 3600000 // 1 hour

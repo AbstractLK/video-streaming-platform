@@ -12,6 +12,7 @@ config:
   mediaBaseUrl: https://dpjvdtv05i7jm.cloudfront.net
   sqsQueueUrl: https://sqs.ap-southeast-1.amazonaws.com/860977520998/video-streaming-dev-processing-queue
   videoServiceUrl: http://video-service:3000
+  cookieSecure: "false"
 
 secrets:
   jwtSecret: this-is-dev-jwt-secret
