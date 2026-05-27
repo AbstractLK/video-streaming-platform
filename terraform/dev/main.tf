@@ -320,7 +320,7 @@ resource "aws_cloudfront_distribution" "frontend" {
     forwarded_values {
       query_string = true
       headers      = ["Authorization", "Content-Type", "Origin", "Access-Control-Request-Headers", "Access-Control-Request-Method"]
-      cookies { forward = "none" }
+      cookies { forward = "all" }
     }
   }
 
