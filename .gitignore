@@ -9,4 +9,4 @@ coverage/
 *.log
 .DS_Store
 terraform.tfvars
-docs/
+docs/*
