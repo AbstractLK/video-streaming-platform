@@ -4,6 +4,8 @@ A DevOps-focused video streaming platform that demonstrates a production-style d
 
 The application supports user authentication, video metadata management, browser uploads through presigned S3 URLs, asynchronous processing through SQS, HLS playback delivery through CloudFront, and service metrics for Prometheus/Grafana.
 
+<img width="1536" height="1024" alt="architecture diagram" src="https://github.com/user-attachments/assets/7ad4b90c-297c-4a60-8707-35e2b1f64b88" />
+
 ## Table of Contents
 
 - [Architecture](#architecture)
